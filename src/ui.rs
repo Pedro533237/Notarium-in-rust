@@ -1,11 +1,14 @@
 //! Interface do Notarium: biblioteca, criação de partitura e editor inicial.
 use egui::*;
 
-const BG: Color32 = Color32::from_rgb(15, 18, 32);
-const SIDEBAR: Color32 = Color32::from_rgb(21, 25, 50);
-const CARD: Color32 = Color32::from_rgb(27, 32, 64);
-const CARD_HOVER: Color32 = Color32::from_rgb(35, 41, 80);
-const ACCENT: Color32 = Color32::from_rgb(232, 176, 74);
+const BG: Color32 = Color32::from_rgb(11, 14, 28);
+const SIDEBAR: Color32 = Color32::from_rgba_premultiplied(25, 28, 55, 210);
+const GLASS: Color32 = Color32::from_rgba_premultiplied(42, 45, 82, 178);
+const GLASS_SOFT: Color32 = Color32::from_rgba_premultiplied(255, 255, 255, 18);
+const CARD: Color32 = Color32::from_rgba_premultiplied(44, 47, 86, 194);
+const CARD_HOVER: Color32 = Color32::from_rgba_premultiplied(72, 75, 128, 218);
+const ACCENT: Color32 = Color32::from_rgb(176, 151, 255);
+const ACCENT_BLUE: Color32 = Color32::from_rgb(91, 202, 255);
 const TEXT: Color32 = Color32::from_rgb(233, 234, 242);
 const MUTED: Color32 = Color32::from_rgb(141, 146, 173);
 const PAPER: Color32 = Color32::from_rgb(246, 243, 235);
@@ -14,19 +17,21 @@ const INK: Color32 = Color32::from_rgb(60, 62, 80);
 pub fn apply_theme(ctx: &Context) {
     let mut v = Visuals::dark();
     v.panel_fill = BG;
-    v.window_fill = CARD;
+    v.window_fill = GLASS;
     v.override_text_color = Some(TEXT);
-    v.widgets.noninteractive.bg_fill = CARD;
+    v.widgets.noninteractive.bg_fill = GLASS_SOFT;
     v.widgets.inactive.bg_fill = CARD;
     v.widgets.hovered.bg_fill = CARD_HOVER;
     v.selection.bg_fill = ACCENT.gamma_multiply(0.35);
-    v.widgets.inactive.rounding = Rounding::same(8.0);
-    v.widgets.hovered.rounding = Rounding::same(8.0);
-    v.widgets.active.rounding = Rounding::same(8.0);
+    v.widgets.noninteractive.rounding = Rounding::same(12.0);
+    v.widgets.inactive.rounding = Rounding::same(12.0);
+    v.widgets.hovered.rounding = Rounding::same(12.0);
+    v.widgets.active.rounding = Rounding::same(12.0);
     ctx.set_visuals(v);
     ctx.style_mut(|s| {
         s.spacing.item_spacing = vec2(12.0, 12.0);
-        s.spacing.button_padding = vec2(14.0, 8.0);
+        s.spacing.button_padding = vec2(16.0, 9.0);
+        s.visuals.menu_rounding = Rounding::same(14.0);
     });
 }
 
@@ -95,6 +100,7 @@ impl Default for Home {
 
 impl Home {
     pub fn show(&mut self, ctx: &Context) {
+        paint_liquid_background(ctx);
         if self.page == Page::Editor {
             self.editor(ctx);
             return;
@@ -102,10 +108,10 @@ impl Home {
         SidePanel::left("nav")
             .exact_width(232.0)
             .resizable(false)
-            .frame(Frame::none().fill(SIDEBAR).inner_margin(Margin::same(18.0)))
+            .frame(glass_frame(SIDEBAR, 18.0))
             .show(ctx, |ui| self.sidebar(ui));
         CentralPanel::default()
-            .frame(Frame::none().fill(BG).inner_margin(Margin::same(36.0)))
+            .frame(Frame::none().fill(Color32::from_rgba_premultiplied(11, 14, 28, 205)).inner_margin(Margin::same(36.0)))
             .show(ctx, |ui| match self.page {
                 Page::Scores => self.scores(ui),
                 Page::NewScore => self.new_score(ui),
@@ -129,11 +135,12 @@ impl Home {
             let selected = self.page == page;
             let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 42.0), Sense::click());
             if selected || resp.hovered() {
-                ui.painter().rect_filled(rect, Rounding::same(10.0), if selected { CARD_HOVER } else { CARD });
+                ui.painter().rect_filled(rect, Rounding::same(15.0), if selected { CARD_HOVER } else { GLASS_SOFT });
+                ui.painter().rect_stroke(rect, Rounding::same(15.0), Stroke::new(1.0, Color32::from_white_alpha(16)));
             }
             if selected {
                 let bar = Rect::from_min_size(rect.left_center() - vec2(0.0, 11.0), vec2(4.0, 22.0));
-                ui.painter().rect_filled(bar, Rounding::same(2.0), ACCENT);
+                ui.painter().rect_filled(bar, Rounding::same(3.0), ACCENT_BLUE);
             }
             ui.painter().text(rect.left_center() + vec2(20.0, 0.0), Align2::LEFT_CENTER, name, FontId::proportional(15.0), if selected { TEXT } else { MUTED });
             if resp.clicked() { self.page = page; }
@@ -194,7 +201,7 @@ impl Home {
         ui.add_space(22.0);
         ui.columns(2, |columns| {
             let ui = &mut columns[0];
-            ui.group(|ui| {
+            glass_card(ui, |ui| {
                 ui.label(RichText::new("Informações da obra").size(18.0).strong());
                 ui.add_space(8.0);
                 labeled_text(ui, "Título", &mut self.title, "Ex.: Minha sonata");
@@ -219,7 +226,7 @@ impl Home {
                     });
             });
             let ui = &mut columns[1];
-            ui.group(|ui| {
+            glass_card(ui, |ui| {
                 ui.label(RichText::new("Configuração musical").size(18.0).strong());
                 ui.add_space(8.0);
                 ui.label(RichText::new("Fórmula de compasso").color(MUTED));
@@ -251,7 +258,7 @@ impl Home {
     }
 
     fn editor(&mut self, ctx: &Context) {
-        TopBottomPanel::top("editor_toolbar").frame(Frame::none().fill(SIDEBAR).inner_margin(Margin::same(12.0))).show(ctx, |ui| {
+        TopBottomPanel::top("editor_toolbar").frame(glass_frame(SIDEBAR, 12.0)).show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("← Biblioteca").clicked() { self.page = Page::Scores; }
                 ui.separator();
@@ -264,7 +271,7 @@ impl Home {
                 });
             });
         });
-        SidePanel::left("tools").exact_width(172.0).frame(Frame::none().fill(SIDEBAR).inner_margin(Margin::same(14.0))).show(ctx, |ui| {
+        SidePanel::left("tools").exact_width(172.0).frame(glass_frame(SIDEBAR, 14.0)).show(ctx, |ui| {
             ui.label(RichText::new("Ferramentas").size(17.0).strong());
             ui.add_space(12.0);
             for (icon, name) in [("↖", "Selecionar"), ("♩", "Nota"), ("♪", "Colcheia"), ("𝄞", "Clave"), ("—", "Pauta"), ("⌫", "Apagar")] {
@@ -276,7 +283,7 @@ impl Home {
             ui.add_space(12.0);
             ui.label(RichText::new("Clique nas ferramentas para começar a inserir notas.").size(11.5).color(MUTED));
         });
-        CentralPanel::default().frame(Frame::none().fill(Color32::from_rgb(42, 45, 58)).inner_margin(Margin::same(24.0))).show(ctx, |ui| {
+        CentralPanel::default().frame(glass_frame(Color32::from_rgba_premultiplied(42, 45, 58, 185), 24.0)).show(ctx, |ui| {
             ScrollArea::both().auto_shrink([false, false]).show(ui, |ui| {
                 let width = 930.0 * self.zoom;
                 let height = 690.0 * self.zoom;
@@ -292,6 +299,27 @@ impl Home {
         ui.add_space(8.0);
         ui.label(RichText::new("Esta seção chega em uma versão futura.").size(14.5).color(MUTED));
     }
+}
+
+fn glass_frame(fill: Color32, margin: f32) -> Frame {
+    Frame::none()
+        .fill(fill)
+        .stroke(Stroke::new(1.0, Color32::from_white_alpha(22)))
+        .rounding(Rounding::same(20.0))
+        .inner_margin(Margin::same(margin))
+}
+
+fn glass_card(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui)) {
+    glass_frame(GLASS, 20.0).show(ui, add_contents);
+}
+
+fn paint_liquid_background(ctx: &Context) {
+    let rect = ctx.screen_rect();
+    let p = ctx.layer_painter(LayerId::background());
+    p.rect_filled(rect, 0.0, BG);
+    p.circle_filled(pos2(rect.right() - 90.0, rect.top() + 100.0), 210.0, Color32::from_rgba_premultiplied(83, 63, 174, 28));
+    p.circle_filled(pos2(rect.left() + 210.0, rect.bottom() - 50.0), 260.0, Color32::from_rgba_premultiplied(25, 126, 190, 20));
+    p.circle_filled(pos2(rect.center().x + 80.0, rect.center().y), 150.0, Color32::from_rgba_premultiplied(196, 88, 210, 12));
 }
 
 fn labeled_text(ui: &mut Ui, label: &str, value: &mut String, hint: &str) {
@@ -336,9 +364,10 @@ fn fancy_button(ui: &mut Ui, text: &str, primary: bool) -> Response {
     let galley = ui.painter().layout_no_wrap(text.to_owned(), FontId::proportional(14.5), Color32::WHITE);
     let (rect, resp) = ui.allocate_exact_size(vec2(galley.size().x + 36.0, 38.0), Sense::click());
     let hover = resp.hovered();
-    let (fill, fg) = if primary { (if hover { ACCENT.gamma_multiply(1.12) } else { ACCENT }, Color32::from_rgb(35, 24, 4)) } else { (if hover { CARD_HOVER } else { CARD }, TEXT) };
-    ui.painter().rect_filled(rect, Rounding::same(10.0), fill);
-    if !primary { ui.painter().rect_stroke(rect, Rounding::same(10.0), Stroke::new(1.0, Color32::from_white_alpha(18))); }
+    let (fill, fg) = if primary { (if hover { ACCENT.gamma_multiply(1.12) } else { ACCENT }, Color32::from_rgb(27, 22, 55)) } else { (if hover { CARD_HOVER } else { CARD }, TEXT) };
+    ui.painter().rect_filled(rect, Rounding::same(20.0), fill);
+    ui.painter().rect_stroke(rect, Rounding::same(20.0), Stroke::new(1.0, if primary { Color32::from_white_alpha(45) } else { Color32::from_white_alpha(24) }));
+    if primary { ui.painter().line_segment([rect.left_center() + vec2(14.0, -12.0), rect.right_center() - vec2(14.0, 12.0)], Stroke::new(1.0, Color32::from_white_alpha(55))); }
     ui.painter().text(rect.center(), Align2::CENTER_CENTER, text, FontId::proportional(14.5), fg);
     resp.on_hover_cursor(CursorIcon::PointingHand)
 }
@@ -347,9 +376,9 @@ fn score_card(ui: &mut Ui, r: &Recent) -> Response {
     let (rect, resp) = ui.allocate_exact_size(vec2(210.0, 250.0), Sense::click());
     let hover = resp.hovered();
     let p = ui.painter();
-    p.rect_filled(rect.translate(vec2(0.0, 6.0)), Rounding::same(14.0), Color32::from_black_alpha(40));
-    p.rect_filled(rect, Rounding::same(14.0), if hover { CARD_HOVER } else { CARD });
-    if hover { p.rect_stroke(rect, Rounding::same(14.0), Stroke::new(1.5, ACCENT)); }
+    p.rect_filled(rect.translate(vec2(0.0, 8.0)), Rounding::same(20.0), Color32::from_black_alpha(70));
+    p.rect_filled(rect, Rounding::same(20.0), if hover { CARD_HOVER } else { CARD });
+    p.rect_stroke(rect, Rounding::same(20.0), Stroke::new(if hover { 1.5 } else { 1.0 }, if hover { ACCENT_BLUE } else { Color32::from_white_alpha(20) }));
     let page = Rect::from_min_size(rect.min + vec2(18.0, 18.0), vec2(rect.width() - 36.0, 150.0));
     p.rect_filled(page, Rounding::same(6.0), PAPER);
     for s in 0..3 { let top = page.top() + 22.0 + s as f32 * 40.0; for l in 0..5 { let y = top + l as f32 * 4.5; p.line_segment([pos2(page.left() + 10.0, y), pos2(page.right() - 10.0, y)], Stroke::new(0.8, INK)); } }
