@@ -18,7 +18,7 @@ fn show_error(message: &str) {
     let title: Vec<u16> = "Notarium - erro".encode_utf16().chain(std::iter::once(0)).collect();
     unsafe {
         let _ = MessageBoxW(
-            WinHwnd(0),
+            WinHwnd(std::ptr::null_mut()),
             PCWSTR(text.as_ptr()),
             PCWSTR(title.as_ptr()),
             MB_OK | MB_ICONERROR,
