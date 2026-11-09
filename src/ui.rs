@@ -1,18 +1,18 @@
 //! Interface do Notarium: biblioteca, criação de partitura e editor inicial.
 use egui::*;
 
-const BG: Color32 = Color32::from_rgb(232, 237, 248);
+const BG: Color32 = Color32::from_rgb(11, 14, 28);
 // Color32::from_rgba_premultiplied é const no egui 0.28. Os RGB abaixo já
 // estão multiplicados pelo alpha para criar superfícies claras de vidro.
-const SIDEBAR: Color32 = Color32::from_rgba_premultiplied(220, 226, 239, 232);
-const GLASS: Color32 = Color32::from_rgba_premultiplied(230, 235, 247, 232);
-const GLASS_SOFT: Color32 = Color32::from_rgba_premultiplied(77, 79, 82, 80);
-const CARD: Color32 = Color32::from_rgba_premultiplied(218, 225, 242, 235);
-const CARD_HOVER: Color32 = Color32::from_rgba_premultiplied(205, 215, 241, 245);
-const ACCENT: Color32 = Color32::from_rgb(103, 88, 211);
-const ACCENT_BLUE: Color32 = Color32::from_rgb(42, 135, 220);
-const TEXT: Color32 = Color32::from_rgb(30, 38, 62);
-const MUTED: Color32 = Color32::from_rgb(83, 95, 121);
+const SIDEBAR: Color32 = Color32::from_rgba_premultiplied(22, 26, 49, 238);
+const GLASS: Color32 = Color32::from_rgba_premultiplied(36, 41, 70, 242);
+const GLASS_SOFT: Color32 = Color32::from_rgba_premultiplied(18, 18, 18, 18);
+const CARD: Color32 = Color32::from_rgba_premultiplied(40, 44, 78, 230);
+const CARD_HOVER: Color32 = Color32::from_rgba_premultiplied(62, 70, 122, 245);
+const ACCENT: Color32 = Color32::from_rgb(178, 154, 255);
+const ACCENT_BLUE: Color32 = Color32::from_rgb(96, 196, 255);
+const TEXT: Color32 = Color32::from_rgb(240, 242, 250);
+const MUTED: Color32 = Color32::from_rgb(163, 170, 196);
 const PAPER: Color32 = Color32::from_rgb(246, 243, 235);
 const INK: Color32 = Color32::from_rgb(60, 62, 80);
 
@@ -118,7 +118,7 @@ impl Home {
             .frame(glass_frame(SIDEBAR, 18.0))
             .show(ctx, |ui| self.sidebar(ui));
         CentralPanel::default()
-            .frame(Frame::none().fill(Color32::from_rgba_unmultiplied(238, 242, 251, 215)).inner_margin(Margin::same(36.0)))
+            .frame(Frame::none().fill(Color32::from_rgba_unmultiplied(15, 19, 37, 225)).inner_margin(Margin::same(36.0)))
             .show(ctx, |ui| match self.page {
                 Page::Scores => self.scores(ui),
                 Page::NewScore => self.scores(ui),
@@ -312,7 +312,7 @@ impl Home {
             ui.add_space(12.0);
             ui.label(RichText::new("Clique nas ferramentas para começar a inserir notas.").size(11.5).color(MUTED));
         });
-        CentralPanel::default().frame(glass_frame(Color32::from_rgba_unmultiplied(218, 225, 242, 225), 24.0)).show(ctx, |ui| {
+        CentralPanel::default().frame(glass_frame(Color32::from_rgba_unmultiplied(35, 40, 69, 232), 24.0)).show(ctx, |ui| {
             ScrollArea::both().auto_shrink([false, false]).show(ui, |ui| {
                 let width = 930.0 * self.zoom;
                 let height = 690.0 * self.zoom;
