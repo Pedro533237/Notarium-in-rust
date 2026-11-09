@@ -1,16 +1,53 @@
 name: Build Notarium (Windows)
+
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: Build Windows x64
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release
-      - uses: actions/upload-artifact@v4
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Instalar Rust MSVC
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable-x86_64-pc-windows-msvc
+          target: x86_64-pc-windows-msvc
+          components: rustfmt
+
+      - name: Cache do Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-msvc
+
+      - name: Compilar release
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Conferir executável
+        shell: pwsh
+        run: |
+          $exe = "target\x86_64-pc-windows-msvc\release\notarium.exe"
+          if (!(Test-Path $exe)) {
+            Write-Error "Executável não encontrado em $exe"
+            exit 1
+          }
+          Get-Item $exe | Format-List FullName,Length,LastWriteTime
+
+      - name: Publicar Notarium.exe
+        uses: actions/upload-artifact@v4
         with:
           name: Notarium-windows-x64
-          path: target/release/notarium.exe
+          path: target/x86_64-pc-windows-msvc/release/notarium.exe
+          if-no-files-found: error
+          retention-days: 14
