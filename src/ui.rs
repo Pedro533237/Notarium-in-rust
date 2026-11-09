@@ -1,18 +1,18 @@
 //! Interface do Notarium: biblioteca, criação de partitura e editor inicial.
 use egui::*;
 
-const BG: Color32 = Color32::from_rgb(11, 14, 28);
+const BG: Color32 = Color32::from_rgb(232, 237, 248);
 // Color32::from_rgba_premultiplied é const no egui 0.28. Os RGB abaixo já
-// estão multiplicados pelo alpha para manter o mesmo aspecto translúcido.
-const SIDEBAR: Color32 = Color32::from_rgba_premultiplied(23, 26, 51, 238);
-const GLASS: Color32 = Color32::from_rgba_premultiplied(37, 41, 72, 242);
-const GLASS_SOFT: Color32 = Color32::from_rgba_premultiplied(18, 18, 18, 18);
-const CARD: Color32 = Color32::from_rgba_premultiplied(40, 42, 78, 230);
-const CARD_HOVER: Color32 = Color32::from_rgba_premultiplied(69, 72, 123, 245);
-const ACCENT: Color32 = Color32::from_rgb(176, 151, 255);
-const ACCENT_BLUE: Color32 = Color32::from_rgb(91, 202, 255);
-const TEXT: Color32 = Color32::from_rgb(233, 234, 242);
-const MUTED: Color32 = Color32::from_rgb(141, 146, 173);
+// estão multiplicados pelo alpha para criar superfícies claras de vidro.
+const SIDEBAR: Color32 = Color32::from_rgba_premultiplied(220, 226, 239, 232);
+const GLASS: Color32 = Color32::from_rgba_premultiplied(230, 235, 247, 232);
+const GLASS_SOFT: Color32 = Color32::from_rgba_premultiplied(77, 79, 82, 80);
+const CARD: Color32 = Color32::from_rgba_premultiplied(218, 225, 242, 235);
+const CARD_HOVER: Color32 = Color32::from_rgba_premultiplied(205, 215, 241, 245);
+const ACCENT: Color32 = Color32::from_rgb(103, 88, 211);
+const ACCENT_BLUE: Color32 = Color32::from_rgb(42, 135, 220);
+const TEXT: Color32 = Color32::from_rgb(30, 38, 62);
+const MUTED: Color32 = Color32::from_rgb(83, 95, 121);
 const PAPER: Color32 = Color32::from_rgb(246, 243, 235);
 const INK: Color32 = Color32::from_rgb(60, 62, 80);
 
@@ -33,6 +33,9 @@ pub fn apply_theme(ctx: &Context) {
     ctx.style_mut(|s| {
         s.spacing.item_spacing = vec2(12.0, 12.0);
         s.spacing.button_padding = vec2(16.0, 9.0);
+        s.text_styles.insert(TextStyle::Body, FontId::proportional(15.0));
+        s.text_styles.insert(TextStyle::Button, FontId::proportional(14.0));
+        s.text_styles.insert(TextStyle::Small, FontId::proportional(12.5));
         s.visuals.menu_rounding = Rounding::same(14.0);
     });
 }
@@ -115,7 +118,7 @@ impl Home {
             .frame(glass_frame(SIDEBAR, 18.0))
             .show(ctx, |ui| self.sidebar(ui));
         CentralPanel::default()
-            .frame(Frame::none().fill(Color32::from_rgba_premultiplied(11, 14, 28, 205)).inner_margin(Margin::same(36.0)))
+            .frame(Frame::none().fill(Color32::from_rgba_unmultiplied(238, 242, 251, 215)).inner_margin(Margin::same(36.0)))
             .show(ctx, |ui| match self.page {
                 Page::Scores => self.scores(ui),
                 Page::NewScore => self.scores(ui),
@@ -309,7 +312,7 @@ impl Home {
             ui.add_space(12.0);
             ui.label(RichText::new("Clique nas ferramentas para começar a inserir notas.").size(11.5).color(MUTED));
         });
-        CentralPanel::default().frame(glass_frame(Color32::from_rgba_unmultiplied(42, 45, 58, 230), 24.0)).show(ctx, |ui| {
+        CentralPanel::default().frame(glass_frame(Color32::from_rgba_unmultiplied(218, 225, 242, 225), 24.0)).show(ctx, |ui| {
             ScrollArea::both().auto_shrink([false, false]).show(ui, |ui| {
                 let width = 930.0 * self.zoom;
                 let height = 690.0 * self.zoom;
@@ -343,9 +346,9 @@ fn paint_liquid_background(ctx: &Context) {
     let rect = ctx.screen_rect();
     let p = ctx.layer_painter(LayerId::background());
     p.rect_filled(rect, 0.0, BG);
-    p.circle_filled(pos2(rect.right() - 90.0, rect.top() + 100.0), 210.0, Color32::from_rgba_premultiplied(83, 63, 174, 28));
-    p.circle_filled(pos2(rect.left() + 210.0, rect.bottom() - 50.0), 260.0, Color32::from_rgba_premultiplied(25, 126, 190, 20));
-    p.circle_filled(pos2(rect.center().x + 80.0, rect.center().y), 150.0, Color32::from_rgba_premultiplied(196, 88, 210, 12));
+    p.circle_filled(pos2(rect.right() - 90.0, rect.top() + 100.0), 210.0, Color32::from_rgba_unmultiplied(141, 125, 255, 55));
+    p.circle_filled(pos2(rect.left() + 210.0, rect.bottom() - 50.0), 260.0, Color32::from_rgba_unmultiplied(55, 180, 240, 42));
+    p.circle_filled(pos2(rect.center().x + 80.0, rect.center().y), 150.0, Color32::from_rgba_unmultiplied(245, 145, 220, 32));
 }
 
 fn labeled_text(ui: &mut Ui, label: &str, value: &mut String, hint: &str) {
