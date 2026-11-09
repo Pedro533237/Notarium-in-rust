@@ -2,11 +2,11 @@
 use egui::*;
 
 const BG: Color32 = Color32::from_rgb(11, 14, 28);
-const SIDEBAR: Color32 = Color32::from_rgba_premultiplied(25, 28, 55, 210);
-const GLASS: Color32 = Color32::from_rgba_premultiplied(42, 45, 82, 178);
-const GLASS_SOFT: Color32 = Color32::from_rgba_premultiplied(255, 255, 255, 18);
-const CARD: Color32 = Color32::from_rgba_premultiplied(44, 47, 86, 194);
-const CARD_HOVER: Color32 = Color32::from_rgba_premultiplied(72, 75, 128, 218);
+const SIDEBAR: Color32 = Color32::from_rgba_unmultiplied(25, 28, 55, 238);
+const GLASS: Color32 = Color32::from_rgba_unmultiplied(39, 43, 76, 242);
+const GLASS_SOFT: Color32 = Color32::from_rgba_unmultiplied(255, 255, 255, 18);
+const CARD: Color32 = Color32::from_rgba_unmultiplied(44, 47, 86, 230);
+const CARD_HOVER: Color32 = Color32::from_rgba_unmultiplied(72, 75, 128, 245);
 const ACCENT: Color32 = Color32::from_rgb(176, 151, 255);
 const ACCENT_BLUE: Color32 = Color32::from_rgb(91, 202, 255);
 const TEXT: Color32 = Color32::from_rgb(233, 234, 242);
@@ -61,6 +61,7 @@ struct Recent {
 
 pub struct Home {
     page: Page,
+    new_score_open: bool,
     search: String,
     status: String,
     pub quit: bool,
@@ -78,6 +79,7 @@ impl Default for Home {
     fn default() -> Self {
         Self {
             page: Page::Scores,
+            new_score_open: false,
             search: String::new(),
             status: String::new(),
             quit: false,
@@ -114,9 +116,12 @@ impl Home {
             .frame(Frame::none().fill(Color32::from_rgba_premultiplied(11, 14, 28, 205)).inner_margin(Margin::same(36.0)))
             .show(ctx, |ui| match self.page {
                 Page::Scores => self.scores(ui),
-                Page::NewScore => self.new_score(ui),
+                Page::NewScore => self.scores(ui),
                 _ => self.placeholder(ui),
             });
+        if self.new_score_open {
+            self.new_score_modal(ctx);
+        }
     }
 
     fn sidebar(&mut self, ui: &mut Ui) {
@@ -160,7 +165,7 @@ impl Home {
         ui.horizontal(|ui| {
             if fancy_button(ui, "+  Nova partitura", true).clicked() {
                 self.status.clear();
-                self.page = Page::NewScore;
+                self.new_score_open = true;
             }
             if fancy_button(ui, "Abrir arquivo…", false).clicked() {
                 self.status = "Leitor de MusicXML/.mscx em desenvolvimento.".into();
@@ -191,70 +196,89 @@ impl Home {
         }
     }
 
-    fn new_score(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            if ui.button("← Voltar").clicked() { self.page = Page::Scores; }
-            ui.add_space(12.0);
-            ui.label(RichText::new("Criar nova partitura").size(28.0).strong());
-        });
-        ui.label(RichText::new("Configure os dados iniciais, como no fluxo de criação do Sibelius.").color(MUTED));
-        ui.add_space(22.0);
-        ui.columns(2, |columns| {
-            let ui = &mut columns[0];
-            glass_card(ui, |ui| {
-                ui.label(RichText::new("Informações da obra").size(18.0).strong());
-                ui.add_space(8.0);
-                labeled_text(ui, "Título", &mut self.title, "Ex.: Minha sonata");
-                labeled_text(ui, "Compositor", &mut self.composer, "Seu nome");
-                ui.add_space(8.0);
-                ui.label(RichText::new("Instrumento principal").color(MUTED));
-                ComboBox::from_id_source("instrument")
-                    .selected_text(&self.instrument)
-                    .show_ui(ui, |ui| {
-                        for item in ["Piano", "Violão", "Violino", "Flauta", "Voz", "Instrumento em Dó"] {
-                            ui.selectable_value(&mut self.instrument, item.to_string(), item);
+    fn new_score_modal(&mut self, ctx: &Context) {
+        // Escurece a biblioteca atrás do painel, como uma folha flutuante.
+        let screen = ctx.screen_rect();
+        ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("modal-dim")))
+            .rect_filled(screen, 0.0, Color32::from_rgba_unmultiplied(4, 6, 16, 150));
+        let mut open = true;
+        let mut create = false;
+        let mut cancel = false;
+        Window::new("Nova partitura")
+            .open(&mut open)
+            .title_bar(false)
+            .collapsible(false)
+            .resizable(false)
+            .fixed_size(vec2(720.0, 500.0))
+            .anchor(Align2::CENTER_CENTER, vec2(0.0, 0.0))
+            .frame(glass_frame(GLASS, 24.0))
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new("✦").size(25.0).color(ACCENT_BLUE));
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new("Nova partitura").size(23.0).strong());
+                        ui.label(RichText::new("Defina os detalhes antes de começar").size(12.5).color(MUTED));
+                    });
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        if ui.button("Cancelar").clicked() { cancel = true; }
+                    });
+                });
+                ui.add_space(20.0);
+                ui.columns(2, |columns| {
+                    let ui = &mut columns[0];
+                    glass_card(ui, |ui| {
+                        ui.label(RichText::new("Informações da obra").size(16.0).strong());
+                        ui.add_space(8.0);
+                        labeled_text(ui, "Título", &mut self.title, "Ex.: Minha sonata");
+                        labeled_text(ui, "Compositor", &mut self.composer, "Seu nome");
+                        ui.add_space(6.0);
+                        ui.label(RichText::new("Instrumento principal").color(MUTED));
+                        ComboBox::from_id_source("modal-instrument")
+                            .selected_text(&self.instrument)
+                            .show_ui(ui, |ui| {
+                                for item in ["Piano", "Violão", "Violino", "Flauta", "Voz", "Instrumento em Dó"] {
+                                    ui.selectable_value(&mut self.instrument, item.to_string(), item);
+                                }
+                            });
+                    });
+                    let ui = &mut columns[1];
+                    glass_card(ui, |ui| {
+                        ui.label(RichText::new("Configuração musical").size(16.0).strong());
+                        ui.add_space(8.0);
+                        ui.label(RichText::new("Armadura de clave").color(MUTED));
+                        ComboBox::from_id_source("modal-key")
+                            .selected_text(&self.key_signature)
+                            .show_ui(ui, |ui| {
+                                for item in ["Dó maior", "Sol maior", "Ré maior", "Lá maior", "Fá maior", "Sib maior", "Lá menor", "Mi menor"] {
+                                    ui.selectable_value(&mut self.key_signature, item.to_string(), item);
+                                }
+                            });
+                        ui.add_space(8.0);
+                        ui.label(RichText::new("Fórmula de compasso").color(MUTED));
+                        ComboBox::from_id_source("modal-meter")
+                            .selected_text(&self.time_signature)
+                            .show_ui(ui, |ui| {
+                                for item in ["4/4", "3/4", "2/4", "6/8", "9/8", "12/8"] {
+                                    ui.selectable_value(&mut self.time_signature, item.to_string(), item);
+                                }
+                            });
+                        labeled_text(ui, "Andamento", &mut self.tempo, "♩ = 100");
+                    });
+                });
+                ui.add_space(18.0);
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new(format!("{} · {} · {}", self.instrument, self.key_signature, self.time_signature)).color(MUTED));
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        if fancy_button(ui, "Criar partitura", true).clicked() {
+                            if self.title.trim().is_empty() { self.status = "Digite um título para a partitura.".into(); } else { create = true; }
                         }
                     });
-                ui.add_space(10.0);
-                ui.label(RichText::new("Armadura de clave").color(MUTED));
-                ComboBox::from_id_source("key")
-                    .selected_text(&self.key_signature)
-                    .show_ui(ui, |ui| {
-                        for item in ["Dó maior", "Sol maior", "Ré maior", "Lá maior", "Fá maior", "Sib maior", "Lá menor", "Mi menor"] {
-                            ui.selectable_value(&mut self.key_signature, item.to_string(), item);
-                        }
-                    });
+                });
+                if !self.status.is_empty() { ui.label(RichText::new(&self.status).color(ACCENT)); }
             });
-            let ui = &mut columns[1];
-            glass_card(ui, |ui| {
-                ui.label(RichText::new("Configuração musical").size(18.0).strong());
-                ui.add_space(8.0);
-                ui.label(RichText::new("Fórmula de compasso").color(MUTED));
-                ComboBox::from_id_source("meter")
-                    .selected_text(&self.time_signature)
-                    .show_ui(ui, |ui| {
-                        for item in ["4/4", "3/4", "2/4", "6/8", "9/8", "12/8"] {
-                            ui.selectable_value(&mut self.time_signature, item.to_string(), item);
-                        }
-                    });
-                ui.add_space(10.0);
-                labeled_text(ui, "Andamento", &mut self.tempo, "♩ = 100");
-                ui.add_space(12.0);
-                ui.label(RichText::new("Resumo").color(MUTED));
-                ui.label(format!("{} · {} · {}", self.instrument, self.key_signature, self.time_signature));
-                ui.label(RichText::new("Você poderá editar estes elementos dentro do editor.").size(12.0).color(MUTED));
-            });
-        });
-        ui.add_space(24.0);
-        if fancy_button(ui, "Criar e abrir editor", true).clicked() {
-            if self.title.trim().is_empty() {
-                self.status = "Digite um título para a partitura.".into();
-            } else {
-                self.status.clear();
-                self.page = Page::Editor;
-            }
-        }
-        if !self.status.is_empty() { ui.label(RichText::new(&self.status).color(ACCENT)); }
+        if create { self.status.clear(); self.new_score_open = false; self.page = Page::Editor; }
+        if cancel { open = false; }
+        if !open { self.new_score_open = false; }
     }
 
     fn editor(&mut self, ctx: &Context) {
@@ -267,7 +291,7 @@ impl Home {
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     ui.add(Slider::new(&mut self.zoom, 0.75..=1.5).text("Zoom"));
                     ui.button("Salvar");
-                    if ui.button("Configuração").clicked() { self.page = Page::NewScore; }
+                    if ui.button("Configuração").clicked() { self.page = Page::Scores; self.new_score_open = true; }
                 });
             });
         });
@@ -283,7 +307,7 @@ impl Home {
             ui.add_space(12.0);
             ui.label(RichText::new("Clique nas ferramentas para começar a inserir notas.").size(11.5).color(MUTED));
         });
-        CentralPanel::default().frame(glass_frame(Color32::from_rgba_premultiplied(42, 45, 58, 185), 24.0)).show(ctx, |ui| {
+        CentralPanel::default().frame(glass_frame(Color32::from_rgba_unmultiplied(42, 45, 58, 230), 24.0)).show(ctx, |ui| {
             ScrollArea::both().auto_shrink([false, false]).show(ui, |ui| {
                 let width = 930.0 * self.zoom;
                 let height = 690.0 * self.zoom;
