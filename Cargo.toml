@@ -1,0 +1,28 @@
+[package]
+name = "notarium"
+version = "0.1.0"
+edition = "2021"
+description = "Notarium - editor de partituras"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+egui = "0.31"
+egui-winit = { version = "0.31", default-features = false }
+egui-directx11 = "0.5"
+winit = "0.30"
+# IMPORTANTE: a versao do crate `windows` deve ser a MESMA usada por egui-directx11.
+# Confira com `cargo tree -i windows` e ajuste aqui se houver duas versoes.
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "abort"
