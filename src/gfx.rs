@@ -1,8 +1,9 @@
 use windows::core::Interface;
 use windows::Win32::Foundation::{HMODULE, HWND};
 use windows::Win32::Graphics::Direct3D::{
-    D3D_DRIVER_TYPE_HARDWARE, D3D_DRIVER_TYPE_WARP, D3D_FEATURE_LEVEL_10_0,
-    D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_11_0,
+    D3D_DRIVER_TYPE, D3D_DRIVER_TYPE_HARDWARE, D3D_DRIVER_TYPE_WARP,
+    D3D_FEATURE_LEVEL, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_10_1,
+    D3D_FEATURE_LEVEL_11_0,
 };
 use windows::Win32::Graphics::Direct3D11::*;
 use windows::Win32::Graphics::Dxgi::Common::*;
