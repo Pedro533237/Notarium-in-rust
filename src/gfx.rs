@@ -11,6 +11,21 @@ use windows::Win32::Graphics::Dxgi::*;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+/// Aceita tanto `()` quanto `Result<(), E>` como retorno de `Renderer::render`.
+trait Report {
+    fn report(self) -> Result<()>;
+}
+impl Report for () {
+    fn report(self) -> Result<()> {
+        Ok(())
+    }
+}
+impl<E: std::fmt::Debug> Report for std::result::Result<(), E> {
+    fn report(self) -> Result<()> {
+        self.map_err(|e| format!("{e:?}").into())
+    }
+}
+
 pub struct Gfx {
     device: ID3D11Device,
     context: ID3D11DeviceContext,
@@ -54,7 +69,7 @@ impl Gfx {
             };
             let swap = factory.CreateSwapChainForHwnd(&device, HWND(hwnd as _), &desc, None, None)?;
 
-            let renderer = egui_directx11::Renderer::new(&device)?;
+            let renderer = egui_directx11::Renderer::new(&device).map_err(|e| format!("{e:?}"))?;
             let mut g = Gfx { device, context, swap, rtv: None, renderer };
             g.make_rtv()?;
             Ok(g)
@@ -82,14 +97,14 @@ impl Gfx {
         }
     }
 
-    pub fn render(&mut self, ctx: &egui::Context, out: egui::FullOutput, ppp: f32) -> Result<()> {
+    pub fn render(&mut self, ctx: &egui::Context, out: egui_directx11::RendererOutput, ppp: f32) -> Result<()> {
         unsafe {
             let Some(rtv) = self.rtv.clone() else { return Ok(()) };
             self.context.OMSetRenderTargets(Some(&[Some(rtv.clone())]), None);
             self.context.ClearRenderTargetView(&rtv, &[0.059, 0.071, 0.125, 1.0]);
 
             // Ponto de integracao com o egui-directx11 (ajuste aqui se a assinatura mudar):
-            self.renderer.render(&self.context, &rtv, ctx, out, ppp)?;
+            self.renderer.render(&self.context, &rtv, ctx, out, ppp).report()?;
 
             self.swap.Present(1, DXGI_PRESENT(0)).ok()?;
         }
