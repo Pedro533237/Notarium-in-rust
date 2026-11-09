@@ -107,7 +107,7 @@ impl Gfx {
         unsafe {
             let Some(rtv) = self.rtv.clone() else { return Ok(()) };
             self.context.OMSetRenderTargets(Some(&[Some(rtv.clone())]), None);
-            self.context.ClearRenderTargetView(&rtv, &[0.059, 0.071, 0.125, 1.0]);
+            self.context.ClearRenderTargetView(&rtv, &[1.0, 0.0, 0.0, 1.0]);
 
             // Ponto de integracao com o egui-directx11 (ajuste aqui se a assinatura mudar):
             self.renderer.render(&self.context, &rtv, ctx, out, ppp).report()?;
