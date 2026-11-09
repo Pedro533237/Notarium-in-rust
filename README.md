@@ -9,4 +9,4 @@ Editor de partituras em Rust (GPL-3.0-or-later). Esta é a etapa 0: janela com m
 Sem instalar nada: suba esta pasta para um repositório no GitHub, abra *Actions → Build Notarium (Windows) → Run workflow* e baixe o artefato `Notarium-windows-x64`.
 
 ## Observação
-O código ainda não foi compilado. Se o `cargo build` reclamar de versões (`egui`, `egui-directx11`, `windows`), as correções ficam em `Cargo.toml` e `src/gfx.rs`. Cole o erro aqui e eu ajusto.
+O código ainda não foi compilado. Usa egui 0.28 + winit 0.29 porque o `egui-directx11 0.5` depende do egui 0.28.

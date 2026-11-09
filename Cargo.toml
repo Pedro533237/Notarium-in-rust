@@ -6,18 +6,13 @@ description = "Notarium - editor de partituras"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-egui = "=0.31.1"
-
-egui-winit = {
-    version = "=0.31.1",
-    default-features = false
-}
-
-egui-directx11 = "=0.7.0"
-
-winit = "0.30"
-
-windows = { version = "=0.60.0", features = [
+egui = "0.28"
+egui-winit = { version = "0.28", default-features = false }
+egui-directx11 = "0.5"
+winit = "0.29"
+# IMPORTANTE: a versao do crate `windows` deve ser a MESMA usada por egui-directx11.
+# Confira com `cargo tree -i windows` e ajuste aqui se houver duas versoes.
+windows = { version = "0.58", features = [
     "Win32_Foundation",
     "Win32_Graphics_Direct3D",
     "Win32_Graphics_Direct3D11",
