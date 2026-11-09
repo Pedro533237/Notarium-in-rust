@@ -2,11 +2,13 @@
 use egui::*;
 
 const BG: Color32 = Color32::from_rgb(11, 14, 28);
-const SIDEBAR: Color32 = Color32::from_rgba_unmultiplied(25, 28, 55, 238);
-const GLASS: Color32 = Color32::from_rgba_unmultiplied(39, 43, 76, 242);
-const GLASS_SOFT: Color32 = Color32::from_rgba_unmultiplied(255, 255, 255, 18);
-const CARD: Color32 = Color32::from_rgba_unmultiplied(44, 47, 86, 230);
-const CARD_HOVER: Color32 = Color32::from_rgba_unmultiplied(72, 75, 128, 245);
+// Color32::from_rgba_premultiplied é const no egui 0.28. Os RGB abaixo já
+// estão multiplicados pelo alpha para manter o mesmo aspecto translúcido.
+const SIDEBAR: Color32 = Color32::from_rgba_premultiplied(23, 26, 51, 238);
+const GLASS: Color32 = Color32::from_rgba_premultiplied(37, 41, 72, 242);
+const GLASS_SOFT: Color32 = Color32::from_rgba_premultiplied(18, 18, 18, 18);
+const CARD: Color32 = Color32::from_rgba_premultiplied(40, 42, 78, 230);
+const CARD_HOVER: Color32 = Color32::from_rgba_premultiplied(69, 72, 123, 245);
 const ACCENT: Color32 = Color32::from_rgb(176, 151, 255);
 const ACCENT_BLUE: Color32 = Color32::from_rgb(91, 202, 255);
 const TEXT: Color32 = Color32::from_rgb(233, 234, 242);
@@ -141,7 +143,7 @@ impl Home {
             let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 42.0), Sense::click());
             if selected || resp.hovered() {
                 ui.painter().rect_filled(rect, Rounding::same(15.0), if selected { CARD_HOVER } else { GLASS_SOFT });
-                ui.painter().rect_stroke(rect, Rounding::same(15.0), Stroke::new(1.0, Color32::from_white_alpha(16)));
+                ui.painter().rect_stroke(rect, Rounding::same(15.0), Stroke::new(1.0_f32, Color32::from_white_alpha(16)));
             }
             if selected {
                 let bar = Rect::from_min_size(rect.left_center() - vec2(0.0, 11.0), vec2(4.0, 22.0));
@@ -328,7 +330,7 @@ impl Home {
 fn glass_frame(fill: Color32, margin: f32) -> Frame {
     Frame::none()
         .fill(fill)
-        .stroke(Stroke::new(1.0, Color32::from_white_alpha(22)))
+        .stroke(Stroke::new(1.0_f32, Color32::from_white_alpha(22)))
         .rounding(Rounding::same(20.0))
         .inner_margin(Margin::same(margin))
 }
@@ -361,16 +363,16 @@ fn draw_score_page(p: &Painter, rect: Rect, home: &Home) {
     let top = rect.top() + 165.0;
     for staff in 0..4 {
         let y0 = top + staff as f32 * 126.0;
-        for line in 0..5 { p.line_segment([pos2(left, y0 + line as f32 * 10.0), pos2(rect.right() - 48.0, y0 + line as f32 * 10.0)], Stroke::new(1.0, INK)); }
+        for line in 0..5 { p.line_segment([pos2(left, y0 + line as f32 * 10.0), pos2(rect.right() - 48.0, y0 + line as f32 * 10.0)], Stroke::new(1.0_f32, INK)); }
         p.text(pos2(left - 38.0, y0 + 20.0), Align2::CENTER_CENTER, if staff == 0 { "𝄞" } else { "𝄞" }, FontId::proportional(31.0), INK);
         p.text(pos2(left + 22.0, y0 + 20.0), Align2::CENTER_CENTER, &home.time_signature, FontId::proportional(16.0), INK);
-        for bar in 1..5 { let x = left + 150.0 * bar as f32; p.line_segment([pos2(x, y0), pos2(x, y0 + 40.0)], Stroke::new(1.0, INK)); }
+        for bar in 1..5 { let x = left + 150.0 * bar as f32; p.line_segment([pos2(x, y0), pos2(x, y0 + 40.0)], Stroke::new(1.0_f32, INK)); }
         let note_x = left + 92.0 + staff as f32 * 18.0;
         let note_y = y0 + 26.0 - staff as f32 * 3.0;
         p.circle_filled(pos2(note_x, note_y), 5.5, INK);
-        p.line_segment([pos2(note_x + 5.0, note_y), pos2(note_x + 5.0, note_y - 31.0)], Stroke::new(1.5, INK));
+        p.line_segment([pos2(note_x + 5.0, note_y), pos2(note_x + 5.0, note_y - 31.0)], Stroke::new(1.5_f32, INK));
         p.circle_filled(pos2(note_x + 70.0, note_y - 12.0), 5.5, INK);
-        p.line_segment([pos2(note_x + 75.0, note_y - 12.0), pos2(note_x + 75.0, note_y - 43.0)], Stroke::new(1.5, INK));
+        p.line_segment([pos2(note_x + 75.0, note_y - 12.0), pos2(note_x + 75.0, note_y - 43.0)], Stroke::new(1.5_f32, INK));
     }
     p.text(pos2(rect.center().x, rect.bottom() - 28.0), Align2::CENTER_CENTER, "Página 1", FontId::proportional(12.0), MUTED);
 }
@@ -378,10 +380,10 @@ fn draw_score_page(p: &Painter, rect: Rect, home: &Home) {
 fn paint_logo(p: &Painter, rect: Rect) {
     p.rect_filled(rect, Rounding::same(11.0), ACCENT);
     let inner = rect.shrink(8.0);
-    for i in 0..5 { let y = inner.top() + inner.height() * (i as f32) / 4.0; p.line_segment([pos2(inner.left(), y), pos2(inner.right(), y)], Stroke::new(1.2, Color32::from_rgb(70, 48, 8))); }
+    for i in 0..5 { let y = inner.top() + inner.height() * (i as f32) / 4.0; p.line_segment([pos2(inner.left(), y), pos2(inner.right(), y)], Stroke::new(1.2_f32, Color32::from_rgb(70, 48, 8))); }
     let head = pos2(inner.center().x - 3.0, inner.bottom() - inner.height() * 0.25);
     p.circle_filled(head, 4.2, Color32::from_rgb(40, 26, 4));
-    p.line_segment([head + vec2(3.8, 0.0), head + vec2(3.8, -inner.height() * 0.85)], Stroke::new(1.8, Color32::from_rgb(40, 26, 4)));
+    p.line_segment([head + vec2(3.8, 0.0), head + vec2(3.8, -inner.height() * 0.85)], Stroke::new(1.8_f32, Color32::from_rgb(40, 26, 4)));
 }
 
 fn fancy_button(ui: &mut Ui, text: &str, primary: bool) -> Response {
@@ -390,8 +392,8 @@ fn fancy_button(ui: &mut Ui, text: &str, primary: bool) -> Response {
     let hover = resp.hovered();
     let (fill, fg) = if primary { (if hover { ACCENT.gamma_multiply(1.12) } else { ACCENT }, Color32::from_rgb(27, 22, 55)) } else { (if hover { CARD_HOVER } else { CARD }, TEXT) };
     ui.painter().rect_filled(rect, Rounding::same(20.0), fill);
-    ui.painter().rect_stroke(rect, Rounding::same(20.0), Stroke::new(1.0, if primary { Color32::from_white_alpha(45) } else { Color32::from_white_alpha(24) }));
-    if primary { ui.painter().line_segment([rect.left_center() + vec2(14.0, -12.0), rect.right_center() - vec2(14.0, 12.0)], Stroke::new(1.0, Color32::from_white_alpha(55))); }
+    ui.painter().rect_stroke(rect, Rounding::same(20.0), Stroke::new(1.0_f32, if primary { Color32::from_white_alpha(45) } else { Color32::from_white_alpha(24) }));
+    if primary { ui.painter().line_segment([rect.left_center() + vec2(14.0, -12.0), rect.right_center() - vec2(14.0, 12.0)], Stroke::new(1.0_f32, Color32::from_white_alpha(55))); }
     ui.painter().text(rect.center(), Align2::CENTER_CENTER, text, FontId::proportional(14.5), fg);
     resp.on_hover_cursor(CursorIcon::PointingHand)
 }
@@ -402,10 +404,10 @@ fn score_card(ui: &mut Ui, r: &Recent) -> Response {
     let p = ui.painter();
     p.rect_filled(rect.translate(vec2(0.0, 8.0)), Rounding::same(20.0), Color32::from_black_alpha(70));
     p.rect_filled(rect, Rounding::same(20.0), if hover { CARD_HOVER } else { CARD });
-    p.rect_stroke(rect, Rounding::same(20.0), Stroke::new(if hover { 1.5 } else { 1.0 }, if hover { ACCENT_BLUE } else { Color32::from_white_alpha(20) }));
+    p.rect_stroke(rect, Rounding::same(20.0), Stroke::new(if hover { 1.5_f32 } else { 1.0_f32 }, if hover { ACCENT_BLUE } else { Color32::from_white_alpha(20) }));
     let page = Rect::from_min_size(rect.min + vec2(18.0, 18.0), vec2(rect.width() - 36.0, 150.0));
     p.rect_filled(page, Rounding::same(6.0), PAPER);
-    for s in 0..3 { let top = page.top() + 22.0 + s as f32 * 40.0; for l in 0..5 { let y = top + l as f32 * 4.5; p.line_segment([pos2(page.left() + 10.0, y), pos2(page.right() - 10.0, y)], Stroke::new(0.8, INK)); } }
+    for s in 0..3 { let top = page.top() + 22.0 + s as f32 * 40.0; for l in 0..5 { let y = top + l as f32 * 4.5; p.line_segment([pos2(page.left() + 10.0, y), pos2(page.right() - 10.0, y)], Stroke::new(0.8_f32, INK)); } }
     p.text(rect.left_top() + vec2(18.0, 184.0), Align2::LEFT_TOP, r.title, FontId::proportional(15.5), TEXT);
     p.text(rect.left_top() + vec2(18.0, 208.0), Align2::LEFT_TOP, r.info, FontId::proportional(12.5), MUTED);
     resp.on_hover_cursor(CursorIcon::PointingHand)
