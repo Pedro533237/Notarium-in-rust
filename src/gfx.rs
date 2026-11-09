@@ -4,7 +4,9 @@
 use windows::core::Interface;
 use windows::Win32::Foundation::{HMODULE, HWND};
 use windows::Win32::Graphics::Direct3D::D3D_DRIVER_TYPE_HARDWARE;
-use windows::Win32::Graphics::Direct3D::D3D_FEATURE_LEVEL_11_0;
+use windows::Win32::Graphics::Direct3D::{
+    D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0,
+};
 use windows::Win32::Graphics::Direct3D11::*;
 use windows::Win32::Graphics::Dxgi::Common::*;
 use windows::Win32::Graphics::Dxgi::*;
@@ -44,7 +46,11 @@ impl Gfx {
                 D3D_DRIVER_TYPE_HARDWARE,
                 HMODULE::default(),
                 D3D11_CREATE_DEVICE_BGRA_SUPPORT,
-                Some(&[D3D_FEATURE_LEVEL_11_0]),
+                Some(&[
+                    D3D_FEATURE_LEVEL_11_0,
+                    D3D_FEATURE_LEVEL_10_1,
+                    D3D_FEATURE_LEVEL_10_0,
+                ]),
                 D3D11_SDK_VERSION,
                 Some(&mut device),
                 None,

@@ -9,8 +9,27 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use winit::window::WindowBuilder;
+use windows::core::PCWSTR;
+use windows::Win32::Foundation::HWND as WinHwnd;
+use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONERROR, MB_OK};
+
+fn show_error(message: &str) {
+    let text: Vec<u16> = message.encode_utf16().chain(std::iter::once(0)).collect();
+    let title: Vec<u16> = "Notarium - erro".encode_utf16().chain(std::iter::once(0)).collect();
+    unsafe {
+        let _ = MessageBoxW(
+            WinHwnd(0),
+            PCWSTR(text.as_ptr()),
+            PCWSTR(title.as_ptr()),
+            MB_OK | MB_ICONERROR,
+        );
+    }
+}
 
 fn main() {
+    // Em builds GUI do Windows, panics não aparecem em um console.
+    // Exiba o motivo em uma caixa de diálogo para facilitar o diagnóstico.
+    std::panic::set_hook(Box::new(|info| show_error(&info.to_string())));
     let el = EventLoop::new().expect("event loop");
     el.set_control_flow(ControlFlow::Wait);
 
@@ -66,9 +85,9 @@ fn main() {
                 let (renderer_output, platform_output, _viewport_output) = egui_directx11::split_output(out);
                 egui_state.handle_platform_output(&window, platform_output);
                 if let Err(e) = gfx.render(&egui_ctx, renderer_output, ppp) {
-                    eprintln!("erro de render: {e}");
+                    show_error(&format!("Falha ao renderizar a interface: {e}"));
+                    elwt.exit();
                 }
-                window.request_redraw();
             }
             _ => {
                 if response.repaint {
